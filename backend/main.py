@@ -3,16 +3,21 @@ from pydantic import BaseModel
 from typing import List, Optional
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, ForeignKey, Text
 from sqlalchemy.orm import declarative_base, sessionmaker, Session, relationship
+import os
+from dotenv import load_dotenv
 import httpx
 
+load_dotenv()
+
 # --- Constants & Configuration ---
-GEMINI_API_KEY = "AIzaSyDdOcrVme04mrh-iFeSbmnJhdmo_yvhsFk"
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent"
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if not GEMINI_API_KEY:
+    print("Warning: GEMINI_API_KEY is not set in the environment.")
+GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={GEMINI_API_KEY}"
 
 async def call_gemini(prompt: str) -> str:
     headers = {
-        "Content-Type": "application/json",
-        "X-goog-api-key": GEMINI_API_KEY
+        "Content-Type": "application/json"
     }
     payload = {
         "contents": [

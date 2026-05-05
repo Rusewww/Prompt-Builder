@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
+import { useLanguage } from './LanguageContext';
 
 const PromptBuilder = () => {
+  const { t } = useLanguage();
+  const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     role: 'Act as a Senior QA Engineer',
     context: 'We are using Python and PyTest.',
@@ -57,6 +60,7 @@ const PromptBuilder = () => {
       setTemplateId(data.template_id);
       setStatus('compiled');
       setLlmResponse('');
+      setCurrentStep(2); // Move to next step on success
     } catch (error) {
       console.error('Compilation failed:', error);
       setStatus('idle');
@@ -115,128 +119,139 @@ const PromptBuilder = () => {
 
   return (
     <div className="prompt-builder-container">
-      {/* Stage 1: Configuration */}
-      <div className="stage-panel stage-1">
-        <h2>Stage 1: Configuration & Structuring</h2>
-        <form onSubmit={handleCompile} className="config-form">
-          <div className="form-group">
-            <label>Role & Expertise:</label>
-            <input type="text" name="role" value={formData.role} onChange={handleInputChange} required />
-          </div>
-
-          <div className="form-group">
-            <label>Context Awareness:</label>
-            <textarea name="context" value={formData.context} onChange={handleInputChange} rows="3" required />
-          </div>
-
-          <div className="form-group">
-            <label>Task Description:</label>
-            <textarea name="task" value={formData.task} onChange={handleInputChange} rows="3" required />
-          </div>
-
-          <div className="form-group">
-            <label>Reasoning Strategy:</label>
-            <select name="reasoning_pattern" value={formData.reasoning_pattern} onChange={handleInputChange}>
-              <option value="Zero-Shot">Option A: Zero-Shot</option>
-              <option value="Chain-of-Thought">Option B: Chain-of-Thought (CoT)</option>
-              <option value="Chain-of-Draft">Option C: Chain-of-Draft (CoD)</option>
-            </select>
-          </div>
-
-          <div className="form-group examples-group">
-            <div className="examples-header">
-              <label>Few-Shot Examples:</label>
-              <button type="button" className="btn-secondary btn-small" onClick={addExample}>+ Add Example</button>
+      {currentStep === 1 && (
+        <div className="stage-panel stage-1">
+          <h2>{t('stage1Title')}</h2>
+          <form onSubmit={handleCompile} className="config-form">
+            <div className="form-group">
+              <label>{t('roleLabel')}</label>
+              <input type="text" name="role" value={formData.role} onChange={handleInputChange} required />
             </div>
-            {formData.examples.map((ex, index) => (
-              <div key={index} className="example-item">
-                <input 
-                  type="text" 
-                  placeholder="Input" 
-                  value={ex.input_text} 
-                  onChange={(e) => handleExampleChange(index, 'input_text', e.target.value)} 
-                  required 
-                />
-                <input 
-                  type="text" 
-                  placeholder="Output" 
-                  value={ex.output_text} 
-                  onChange={(e) => handleExampleChange(index, 'output_text', e.target.value)} 
-                  required 
-                />
-                <button type="button" className="btn-danger btn-small" onClick={() => removeExample(index)}>✕</button>
+
+            <div className="form-group">
+              <label>{t('contextLabel')}</label>
+              <textarea name="context" value={formData.context} onChange={handleInputChange} rows="3" required />
+            </div>
+
+            <div className="form-group">
+              <label>{t('taskLabel')}</label>
+              <textarea name="task" value={formData.task} onChange={handleInputChange} rows="3" required />
+            </div>
+
+            <div className="form-group">
+              <label>{t('reasoningLabel')}</label>
+              <select name="reasoning_pattern" value={formData.reasoning_pattern} onChange={handleInputChange}>
+                <option value="Zero-Shot">{t('optZeroShot')}</option>
+                <option value="Chain-of-Thought">{t('optCot')}</option>
+                <option value="Chain-of-Draft">{t('optCod')}</option>
+              </select>
+            </div>
+
+            <div className="form-group examples-group">
+              <div className="examples-header">
+                <label>{t('examplesLabel')}</label>
+                <button type="button" className="btn-secondary btn-small" onClick={addExample}>{t('addExampleBtn')}</button>
               </div>
-            ))}
-          </div>
+              {formData.examples.map((ex, index) => (
+                <div key={index} className="example-item">
+                  <input 
+                    type="text" 
+                    placeholder={t('inputPlaceholder')}
+                    value={ex.input_text} 
+                    onChange={(e) => handleExampleChange(index, 'input_text', e.target.value)} 
+                    required 
+                  />
+                  <input 
+                    type="text" 
+                    placeholder={t('outputPlaceholder')}
+                    value={ex.output_text} 
+                    onChange={(e) => handleExampleChange(index, 'output_text', e.target.value)} 
+                    required 
+                  />
+                  <button type="button" className="btn-danger btn-small" onClick={() => removeExample(index)}>✕</button>
+                </div>
+              ))}
+            </div>
 
-          <div className="form-group guardrails-group">
-            <label>Guardrails:</label>
-            <label className="checkbox-label">
-              <input type="checkbox" name="use_cove" checked={formData.use_cove} onChange={handleInputChange} />
-              Enable CoVe Fact-Check List
-            </label>
-            <label className="checkbox-label">
-              <input type="checkbox" name="use_self_refine" checked={formData.use_self_refine} onChange={handleInputChange} />
-              Enable Self-Refine Iteration
-            </label>
-          </div>
+            <div className="form-group guardrails-group">
+              <label>{t('guardrailsLabel')}</label>
+              <label className="checkbox-label">
+                <input type="checkbox" name="use_cove" checked={formData.use_cove} onChange={handleInputChange} />
+                {t('coveLabel')}
+              </label>
+              <label className="checkbox-label">
+                <input type="checkbox" name="use_self_refine" checked={formData.use_self_refine} onChange={handleInputChange} />
+                {t('selfRefineLabel')}
+              </label>
+            </div>
 
-          <button type="submit" className="btn-primary" disabled={status === 'compiling'}>
-            {status === 'compiling' ? 'Compiling...' : 'Compile Prompt'}
-          </button>
-        </form>
-      </div>
+            <button type="submit" className="btn-primary" disabled={status === 'compiling'}>
+              {status === 'compiling' ? t('compilingBtn') : t('compileBtn')}
+            </button>
+          </form>
+        </div>
+      )}
 
-      {/* Stage 2: Interactive Testing & HITL */}
-      <div className="stage-panel stage-2">
-        <h2>Stage 2: Interactive Testing & HITL</h2>
-        
-        {compiledResult ? (
-          <div className="preview-section">
-            <h3>Compiled Prompt</h3>
-            <pre className="code-block">{compiledResult}</pre>
-            
-            {(status === 'compiled' || status === 'executing') && (
-              <button 
-                className="btn-primary mt-4" 
-                onClick={handleExecute} 
-                disabled={status === 'executing'}
-              >
-                {status === 'executing' ? 'Executing LLM...' : 'Send to LLM'}
+      {currentStep === 2 && (
+        <div className={`stage-2-wrapper ${llmResponse ? 'has-response' : ''}`}>
+          <div className="stage-panel stage-2-main">
+            <div className="stage-header">
+              <button className="btn-secondary btn-small back-btn" onClick={() => setCurrentStep(1)}>
+                {t('backBtn')}
               </button>
+              <h2>{t('stage2Title')}</h2>
+            </div>
+            
+            {compiledResult ? (
+              <div className="preview-section">
+                <h3>{t('compiledPromptHeader')}</h3>
+                <pre className="code-block">{compiledResult}</pre>
+                
+                {(status === 'compiled' || status === 'executing') && (
+                  <button 
+                    className="btn-primary mt-4" 
+                    onClick={handleExecute} 
+                    disabled={status === 'executing'}
+                  >
+                    {status === 'executing' ? t('executingBtn') : t('sendLlmBtn')}
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="empty-state">
+                <p>{t('emptyPreview')}</p>
+              </div>
             )}
+          </div>
 
-            {llmResponse && (
-              <div className="response-section mt-6">
-                <h3>LLM Response</h3>
+          {llmResponse && (
+            <div className="stage-panel stage-2-response">
+              <div className="response-section">
+                <h3>{t('llmResponseHeader')}</h3>
                 <pre className="code-block">{llmResponse}</pre>
                 
                 {status === 'review' && (
                   <div className="hitl-actions mt-4">
                     <button className="btn-success" onClick={handleApprove}>
-                      Approve (No Hallucinations)
+                      {t('approveBtn')}
                     </button>
                     {formData.use_self_refine && (
                       <button className="btn-danger" onClick={handleRefine}>
-                        Reject / Self-Refine
+                        {t('rejectBtn')}
                       </button>
                     )}
                   </div>
                 )}
                 {status === 'approved' && (
                   <div className="alert-success mt-4">
-                    Response Approved & Saved successfully!
+                    {t('successMsg')}
                   </div>
                 )}
               </div>
-            )}
-          </div>
-        ) : (
-          <div className="empty-state">
-            <p>Compile a prompt in Stage 1 to see the preview here.</p>
-          </div>
-        )}
-      </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
