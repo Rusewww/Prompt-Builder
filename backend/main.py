@@ -127,6 +127,10 @@ class LibraryItem(BaseModel):
     compiled_prompt: str
     is_favorite: bool
 
+class SaveDirectRequest(BaseModel):
+    template_id: int
+    compiled_prompt: str
+
 app = FastAPI(title="Prompt Builder API")
 
 @app.get("/")
@@ -135,9 +139,13 @@ def read_root():
 
 # --- Core Logic ---
 def compile_prompt_pipeline(data: PromptRequest) -> str:
-    prompt = f"Role: {data.role}\n\n"
-    prompt += f"Context & Constraints:\n{data.context}\n\n"
-    prompt += f"Task:\n{data.task}\n\n"
+    prompt = ""
+    if data.role and data.role.strip():
+        prompt += f"Role: {data.role}\n\n"
+    if data.context and data.context.strip():
+        prompt += f"Context & Constraints:\n{data.context}\n\n"
+    if data.task and data.task.strip():
+        prompt += f"Task:\n{data.task}\n\n"
     
     if data.examples:
         prompt += "Examples:\n"
@@ -183,8 +191,11 @@ async def compile_prompt(request: PromptRequest, db: Session = Depends(get_db)):
     improvement_instruction = (
         "You are an expert AI Architect and Prompt Engineer.\n"
         "Your task is to take the following raw user prompt configuration and improve it into a highly optimized, "
-        "professional, and robust prompt ready to be sent to an LLM. Do NOT answer the prompt itself, ONLY rewrite it.\n"
-        "Ensure you maintain all the original constraints, roles, task instructions, and reasoning patterns specified.\n\n"
+        "professional, and robust prompt ready to be sent to an LLM.\n"
+        "CRITICAL RULES:\n"
+        "- Do NOT answer the prompt itself, ONLY rewrite it.\n"
+        "- Provide STRICTLY the prompt text with no conversational filler, no introductions, and no conclusions. Output ONLY the optimized prompt.\n"
+        "- Ensure you maintain all the original constraints, roles, task instructions, and reasoning patterns specified.\n\n"
         "### Raw Prompt Configuration:\n"
         f"{base_prompt}"
     )
@@ -288,4 +299,18 @@ def toggle_favorite(exec_id: int, db: Session = Depends(get_db)):
     db_exec.is_favorite = not db_exec.is_favorite
     db.commit()
     return {"status": "success", "is_favorite": db_exec.is_favorite}
+
+@app.post("/api/prompts/save_direct")
+def save_prompt_direct(request: SaveDirectRequest, db: Session = Depends(get_db)):
+    db_execution = ExecutionLog(
+        template_id=request.template_id,
+        compiled_prompt=request.compiled_prompt,
+        llm_response="",
+        hitl_status="approved",
+        is_favorite=False
+    )
+    db.add(db_execution)
+    db.commit()
+    db.refresh(db_execution)
+    return {"status": "success", "execution_id": db_execution.id}
 

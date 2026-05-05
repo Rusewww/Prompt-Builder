@@ -14,6 +14,9 @@ const PromptBuilder = () => {
     examples: []
   });
 
+  const [useRole, setUseRole] = useState(true);
+  const [useContext, setUseContext] = useState(true);
+
   const [compiledResult, setCompiledResult] = useState('');
   const [templateId, setTemplateId] = useState(null);
   const [executionId, setExecutionId] = useState(null);
@@ -50,10 +53,16 @@ const PromptBuilder = () => {
     e.preventDefault();
     setStatus('compiling');
     try {
+      const payload = {
+        ...formData,
+        role: useRole ? formData.role : '',
+        context: useContext ? formData.context : ''
+      };
+
       const response = await fetch('/api/compile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
       const data = await response.json();
       setCompiledResult(data.compiled_prompt);
@@ -124,13 +133,25 @@ const PromptBuilder = () => {
           <h2>{t('stage1Title')}</h2>
           <form onSubmit={handleCompile} className="config-form">
             <div className="form-group">
-              <label>{t('roleLabel')}</label>
-              <input type="text" name="role" value={formData.role} onChange={handleInputChange} required />
+              <div className="label-with-toggle">
+                <label>{t('roleLabel')}</label>
+                <label className="switch">
+                  <input type="checkbox" checked={useRole} onChange={e => setUseRole(e.target.checked)} />
+                  <span className="slider round"></span>
+                </label>
+              </div>
+              <input type="text" name="role" value={formData.role} onChange={handleInputChange} disabled={!useRole} required={useRole} />
             </div>
 
             <div className="form-group">
-              <label>{t('contextLabel')}</label>
-              <textarea name="context" value={formData.context} onChange={handleInputChange} rows="3" required />
+              <div className="label-with-toggle">
+                <label>{t('contextLabel')}</label>
+                <label className="switch">
+                  <input type="checkbox" checked={useContext} onChange={e => setUseContext(e.target.checked)} />
+                  <span className="slider round"></span>
+                </label>
+              </div>
+              <textarea name="context" value={formData.context} onChange={handleInputChange} rows="3" disabled={!useContext} required={useContext} />
             </div>
 
             <div className="form-group">
@@ -208,14 +229,39 @@ const PromptBuilder = () => {
                 <pre className="code-block">{compiledResult}</pre>
                 
                 {(status === 'compiled' || status === 'executing') && (
-                  <button 
-                    className="btn-primary mt-4" 
-                    onClick={handleExecute} 
-                    disabled={status === 'executing'}
-                  >
-                    {status === 'executing' ? t('executingBtn') : t('sendLlmBtn')}
-                  </button>
+                  <div className="hitl-actions mt-4">
+                    <button 
+                      className="btn-secondary" 
+                      onClick={() => navigator.clipboard.writeText(compiledResult)}
+                    >
+                      {t('copyPromptBtn')}
+                    </button>
+                    <button 
+                      className="btn-primary" 
+                      onClick={handleExecute} 
+                      disabled={status === 'executing'}
+                    >
+                      {status === 'executing' ? t('executingBtn') : t('sendLlmBtn')}
+                    </button>
+                    <button 
+                      className="btn-success" 
+                      onClick={async () => {
+                        try {
+                          const res = await fetch('/api/prompts/save_direct', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ template_id: templateId, compiled_prompt: compiledResult })
+                          });
+                          if(res.ok) setStatus('approved');
+                        } catch (err) { console.error(err); }
+                      }}
+                      disabled={status === 'executing'}
+                    >
+                      {t('saveWithoutTestingBtn')}
+                    </button>
+                  </div>
                 )}
+
               </div>
             ) : (
               <div className="empty-state">

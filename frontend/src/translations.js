@@ -38,7 +38,11 @@ export const translations = {
     menuBtn: "Menu",
     deleteBtn: "Delete",
     favoriteBtn: "Favorite",
-    unfavoriteBtn: "Unfavorite"
+    unfavoriteBtn: "Unfavorite",
+    useRoleToggle: "Enable Role",
+    useContextToggle: "Enable Context",
+    copyPromptBtn: "Copy Prompt",
+    saveWithoutTestingBtn: "Save without Testing"
   },
   uk: {
     appTitle: "Конструктор Промптів",
@@ -79,6 +83,10 @@ export const translations = {
     menuBtn: "Меню",
     deleteBtn: "Видалити",
     favoriteBtn: "У вибране",
-    unfavoriteBtn: "З вибраного"
+    unfavoriteBtn: "З вибраного",
+    useRoleToggle: "Увімкнути Роль",
+    useContextToggle: "Увімкнути Контекст",
+    copyPromptBtn: "Копіювати промпт",
+    saveWithoutTestingBtn: "Зберегти без тестування"
   }
 };
