@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import PromptBuilder from './PromptBuilder';
+import PromptLibrary from './PromptLibrary';
 import { LanguageProvider, useLanguage } from './LanguageContext';
 import './index.css';
 import './App.css';
 
 function AppContent() {
   const { t, toggleLanguage, language } = useLanguage();
+  const [currentView, setCurrentView] = useState('builder'); // 'builder' or 'library'
+  const [menuOpen, setMenuOpen] = useState(false);
+  
   const [theme, setTheme] = useState(() => {
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme) return savedTheme;
@@ -24,7 +28,24 @@ function AppContent() {
   return (
     <div className="App">
       <header className="app-header">
-        <h1 className="app-title">{t('appTitle')}</h1>
+        <div className="header-left">
+          <div className="burger-menu-container">
+            <button className="burger-btn" onClick={() => setMenuOpen(!menuOpen)} aria-label={t('menuBtn')}>
+              ☰
+            </button>
+            {menuOpen && (
+              <div className="burger-dropdown">
+                <button onClick={() => { setCurrentView('builder'); setMenuOpen(false); }}>
+                  {t('builderBtn')}
+                </button>
+                <button onClick={() => { setCurrentView('library'); setMenuOpen(false); }}>
+                  {t('libraryBtn')}
+                </button>
+              </div>
+            )}
+          </div>
+          <h1 className="app-title">{t('appTitle')}</h1>
+        </div>
         <div className="header-actions">
           <button 
             className="theme-toggle-btn lang-toggle-btn" 
@@ -45,7 +66,7 @@ function AppContent() {
         </div>
       </header>
       <main>
-        <PromptBuilder />
+        {currentView === 'builder' ? <PromptBuilder /> : <PromptLibrary />}
       </main>
     </div>
   );

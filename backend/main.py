@@ -77,6 +77,7 @@ class ExecutionLog(Base):
     compiled_prompt = Column(Text)
     llm_response = Column(Text)
     hitl_status = Column(String) # pending, approved, rejected
+    is_favorite = Column(Boolean, default=False)
 
     template = relationship("PromptTemplate", back_populates="executions")
 
@@ -118,6 +119,13 @@ class ExecuteResponse(BaseModel):
 
 class RefineRequest(BaseModel):
     execution_id: int
+
+class LibraryItem(BaseModel):
+    id: int
+    role: str
+    task: str
+    compiled_prompt: str
+    is_favorite: bool
 
 app = FastAPI(title="Prompt Builder API")
 
@@ -244,3 +252,40 @@ async def refine_execution(request: RefineRequest, db: Session = Depends(get_db)
         llm_response=refined_response,
         status="pending"
     )
+
+@app.get("/api/prompts/library", response_model=List[LibraryItem])
+def get_prompt_library(db: Session = Depends(get_db)):
+    # Fetch all approved execution logs
+    approved_executions = db.query(ExecutionLog).filter(ExecutionLog.hitl_status == "approved").all()
+    
+    library = []
+    for exec_log in approved_executions:
+        template = exec_log.template
+        library.append(LibraryItem(
+            id=exec_log.id,
+            role=template.role if template else "Unknown",
+            task=template.task if template else "Unknown",
+            compiled_prompt=exec_log.compiled_prompt,
+            is_favorite=exec_log.is_favorite
+        ))
+    
+    return library[::-1]
+
+@app.delete("/api/prompts/library/{exec_id}")
+def delete_library_item(exec_id: int, db: Session = Depends(get_db)):
+    db_exec = db.query(ExecutionLog).filter(ExecutionLog.id == exec_id).first()
+    if not db_exec:
+        raise HTTPException(status_code=404, detail="Item not found")
+    db.delete(db_exec)
+    db.commit()
+    return {"status": "deleted"}
+
+@app.patch("/api/prompts/library/{exec_id}/favorite")
+def toggle_favorite(exec_id: int, db: Session = Depends(get_db)):
+    db_exec = db.query(ExecutionLog).filter(ExecutionLog.id == exec_id).first()
+    if not db_exec:
+        raise HTTPException(status_code=404, detail="Item not found")
+    db_exec.is_favorite = not db_exec.is_favorite
+    db.commit()
+    return {"status": "success", "is_favorite": db_exec.is_favorite}
+

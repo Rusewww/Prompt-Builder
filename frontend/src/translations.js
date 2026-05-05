@@ -29,6 +29,16 @@ export const translations = {
     emptyPreview: "Compile a prompt in Stage 1 to see the preview here.",
     backBtn: "← Back to Edit",
     toggleLang: "UK",
+    libraryBtn: "Library",
+    builderBtn: "Builder",
+    libraryTitle: "Prompt Library",
+    copyBtn: "Copy",
+    copiedBtn: "Copied!",
+    noSavedPrompts: "No saved prompts yet. Compile and approve a prompt to save it here.",
+    menuBtn: "Menu",
+    deleteBtn: "Delete",
+    favoriteBtn: "Favorite",
+    unfavoriteBtn: "Unfavorite"
   },
   uk: {
     appTitle: "Конструктор Промптів",
@@ -60,5 +70,15 @@ export const translations = {
     emptyPreview: "Скомпілюйте промпт на Етапі 1, щоб побачити попередній перегляд.",
     backBtn: "← Назад до Редагування",
     toggleLang: "EN",
+    libraryBtn: "Бібліотека",
+    builderBtn: "Конструктор",
+    libraryTitle: "Бібліотека Промптів",
+    copyBtn: "Копіювати",
+    copiedBtn: "Скопійовано!",
+    noSavedPrompts: "Немає збережених промптів. Скомпілюйте та затвердьте промпт, щоб зберегти його тут.",
+    menuBtn: "Меню",
+    deleteBtn: "Видалити",
+    favoriteBtn: "У вибране",
+    unfavoriteBtn: "З вибраного"
   }
 };
