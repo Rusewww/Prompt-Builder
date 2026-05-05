@@ -16,6 +16,10 @@ const PromptBuilder = () => {
 
   const [useRole, setUseRole] = useState(true);
   const [useContext, setUseContext] = useState(true);
+  const [useTask, setUseTask] = useState(true);
+  const [useReasoning, setUseReasoning] = useState(true);
+  const [useExamples, setUseExamples] = useState(true);
+  const [useGuardrails, setUseGuardrails] = useState(true);
 
   const [compiledResult, setCompiledResult] = useState('');
   const [templateId, setTemplateId] = useState(null);
@@ -56,7 +60,12 @@ const PromptBuilder = () => {
       const payload = {
         ...formData,
         role: useRole ? formData.role : '',
-        context: useContext ? formData.context : ''
+        context: useContext ? formData.context : '',
+        task: useTask ? formData.task : '',
+        reasoning_pattern: useReasoning ? formData.reasoning_pattern : '',
+        examples: useExamples ? formData.examples : [],
+        use_cove: useGuardrails ? formData.use_cove : false,
+        use_self_refine: useGuardrails ? formData.use_self_refine : false,
       };
 
       const response = await fetch('/api/compile', {
@@ -140,7 +149,11 @@ const PromptBuilder = () => {
                   <span className="slider round"></span>
                 </label>
               </div>
-              <input type="text" name="role" value={formData.role} onChange={handleInputChange} disabled={!useRole} required={useRole} />
+              <div className={`collapsible-wrapper ${useRole ? 'expanded' : ''}`}>
+                <div className="collapsible-inner">
+                  <input type="text" name="role" value={formData.role} onChange={handleInputChange} required={useRole} />
+                </div>
+              </div>
             </div>
 
             <div className="form-group">
@@ -151,59 +164,103 @@ const PromptBuilder = () => {
                   <span className="slider round"></span>
                 </label>
               </div>
-              <textarea name="context" value={formData.context} onChange={handleInputChange} rows="3" disabled={!useContext} required={useContext} />
+              <div className={`collapsible-wrapper ${useContext ? 'expanded' : ''}`}>
+                <div className="collapsible-inner">
+                  <textarea name="context" value={formData.context} onChange={handleInputChange} rows="3" required={useContext} />
+                </div>
+              </div>
             </div>
 
             <div className="form-group">
-              <label>{t('taskLabel')}</label>
-              <textarea name="task" value={formData.task} onChange={handleInputChange} rows="3" required />
+              <div className="label-with-toggle">
+                <label>{t('taskLabel')}</label>
+                <label className="switch">
+                  <input type="checkbox" checked={useTask} onChange={e => setUseTask(e.target.checked)} />
+                  <span className="slider round"></span>
+                </label>
+              </div>
+              <div className={`collapsible-wrapper ${useTask ? 'expanded' : ''}`}>
+                <div className="collapsible-inner">
+                  <textarea name="task" value={formData.task} onChange={handleInputChange} rows="3" required={useTask} />
+                </div>
+              </div>
             </div>
 
             <div className="form-group">
-              <label>{t('reasoningLabel')}</label>
-              <select name="reasoning_pattern" value={formData.reasoning_pattern} onChange={handleInputChange}>
-                <option value="Zero-Shot">{t('optZeroShot')}</option>
-                <option value="Chain-of-Thought">{t('optCot')}</option>
-                <option value="Chain-of-Draft">{t('optCod')}</option>
-              </select>
+              <div className="label-with-toggle">
+                <label>{t('reasoningLabel')}</label>
+                <label className="switch">
+                  <input type="checkbox" checked={useReasoning} onChange={e => setUseReasoning(e.target.checked)} />
+                  <span className="slider round"></span>
+                </label>
+              </div>
+              <div className={`collapsible-wrapper ${useReasoning ? 'expanded' : ''}`}>
+                <div className="collapsible-inner">
+                  <select name="reasoning_pattern" value={formData.reasoning_pattern} onChange={handleInputChange}>
+                    <option value="Zero-Shot">{t('optZeroShot')}</option>
+                    <option value="Chain-of-Thought">{t('optCot')}</option>
+                    <option value="Chain-of-Draft">{t('optCod')}</option>
+                  </select>
+                </div>
+              </div>
             </div>
 
             <div className="form-group examples-group">
-              <div className="examples-header">
+              <div className="label-with-toggle">
                 <label>{t('examplesLabel')}</label>
-                <button type="button" className="btn-secondary btn-small" onClick={addExample}>{t('addExampleBtn')}</button>
+                <label className="switch">
+                  <input type="checkbox" checked={useExamples} onChange={e => setUseExamples(e.target.checked)} />
+                  <span className="slider round"></span>
+                </label>
               </div>
-              {formData.examples.map((ex, index) => (
-                <div key={index} className="example-item">
-                  <input 
-                    type="text" 
-                    placeholder={t('inputPlaceholder')}
-                    value={ex.input_text} 
-                    onChange={(e) => handleExampleChange(index, 'input_text', e.target.value)} 
-                    required 
-                  />
-                  <input 
-                    type="text" 
-                    placeholder={t('outputPlaceholder')}
-                    value={ex.output_text} 
-                    onChange={(e) => handleExampleChange(index, 'output_text', e.target.value)} 
-                    required 
-                  />
-                  <button type="button" className="btn-danger btn-small" onClick={() => removeExample(index)}>✕</button>
+              <div className={`collapsible-wrapper ${useExamples ? 'expanded' : ''}`}>
+                <div className="collapsible-inner">
+                  <div className="examples-header" style={{marginBottom: '1rem'}}>
+                    <button type="button" className="btn-secondary btn-small" onClick={addExample}>{t('addExampleBtn')}</button>
+                  </div>
+                  {formData.examples.map((ex, index) => (
+                    <div key={index} className="example-item">
+                      <input 
+                        type="text" 
+                        placeholder={t('inputPlaceholder')}
+                        value={ex.input_text} 
+                        onChange={(e) => handleExampleChange(index, 'input_text', e.target.value)} 
+                        required={useExamples} 
+                      />
+                      <input 
+                        type="text" 
+                        placeholder={t('outputPlaceholder')}
+                        value={ex.output_text} 
+                        onChange={(e) => handleExampleChange(index, 'output_text', e.target.value)} 
+                        required={useExamples} 
+                      />
+                      <button type="button" className="btn-danger btn-small" onClick={() => removeExample(index)}>✕</button>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
 
             <div className="form-group guardrails-group">
-              <label>{t('guardrailsLabel')}</label>
-              <label className="checkbox-label">
-                <input type="checkbox" name="use_cove" checked={formData.use_cove} onChange={handleInputChange} />
-                {t('coveLabel')}
-              </label>
-              <label className="checkbox-label">
-                <input type="checkbox" name="use_self_refine" checked={formData.use_self_refine} onChange={handleInputChange} />
-                {t('selfRefineLabel')}
-              </label>
+              <div className="label-with-toggle">
+                <label>{t('guardrailsLabel')}</label>
+                <label className="switch">
+                  <input type="checkbox" checked={useGuardrails} onChange={e => setUseGuardrails(e.target.checked)} />
+                  <span className="slider round"></span>
+                </label>
+              </div>
+              <div className={`collapsible-wrapper ${useGuardrails ? 'expanded' : ''}`}>
+                <div className="collapsible-inner">
+                  <label className="checkbox-label">
+                    <input type="checkbox" name="use_cove" checked={formData.use_cove} onChange={handleInputChange} />
+                    {t('coveLabel')}
+                  </label>
+                  <label className="checkbox-label">
+                    <input type="checkbox" name="use_self_refine" checked={formData.use_self_refine} onChange={handleInputChange} />
+                    {t('selfRefineLabel')}
+                  </label>
+                </div>
+              </div>
             </div>
 
             <button type="submit" className="btn-primary" disabled={status === 'compiling'}>

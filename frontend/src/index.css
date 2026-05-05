@@ -723,3 +723,21 @@ input:checked + .slider:before {
 .slider.round:before {
   border-radius: 50%;
 }
+
+/* Collapsible Animation Styles */
+.collapsible-wrapper {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s ease-out, margin-top 0.3s ease-out;
+  margin-top: 0;
+}
+
+.collapsible-wrapper.expanded {
+  grid-template-rows: 1fr;
+  margin-top: 0.5rem;
+}
+
+.collapsible-inner {
+  overflow: hidden;
+}
+
