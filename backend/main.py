@@ -3,7 +3,39 @@ from pydantic import BaseModel
 from typing import List, Optional
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, ForeignKey, Text
 from sqlalchemy.orm import declarative_base, sessionmaker, Session, relationship
-import asyncio
+import httpx
+
+# --- Constants & Configuration ---
+GEMINI_API_KEY = "AIzaSyDdOcrVme04mrh-iFeSbmnJhdmo_yvhsFk"
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent"
+
+async def call_gemini(prompt: str) -> str:
+    headers = {
+        "Content-Type": "application/json",
+        "X-goog-api-key": GEMINI_API_KEY
+    }
+    payload = {
+        "contents": [
+            {
+                "parts": [
+                    {"text": prompt}
+                ]
+            }
+        ]
+    }
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        try:
+            response = await client.post(GEMINI_URL, headers=headers, json=payload)
+            response.raise_for_status()
+            data = response.json()
+            if "candidates" in data and len(data["candidates"]) > 0:
+                parts = data["candidates"][0]["content"]["parts"]
+                text = "".join(part.get("text", "") for part in parts)
+                return text
+            return "Error: No content generated."
+        except Exception as e:
+            print("Gemini API Error:", str(e))
+            raise HTTPException(status_code=500, detail=f"Gemini API Error: {str(e)}")
 
 # --- Database Setup ---
 SQLALCHEMY_DATABASE_URL = "sqlite:///./prompt_builder.db"
@@ -84,6 +116,10 @@ class RefineRequest(BaseModel):
 
 app = FastAPI(title="Prompt Builder API")
 
+@app.get("/")
+def read_root():
+    return {"message": "Prompt Builder API is running. Please access the frontend UI at http://localhost:5173"}
+
 # --- Core Logic ---
 def compile_prompt_pipeline(data: PromptRequest) -> str:
     prompt = f"Role: {data.role}\n\n"
@@ -109,7 +145,7 @@ def compile_prompt_pipeline(data: PromptRequest) -> str:
 
 @app.post("/api/compile", response_model=PromptResponse)
 async def compile_prompt(request: PromptRequest, db: Session = Depends(get_db)):
-    # Create DB Template
+    # 1. Save Base Template Configuration
     db_template = PromptTemplate(
         role=request.role,
         context=request.context,
@@ -127,20 +163,32 @@ async def compile_prompt(request: PromptRequest, db: Session = Depends(get_db)):
         db.add(db_example)
     db.commit()
 
-    compiled = compile_prompt_pipeline(request)
-    return PromptResponse(template_id=db_template.id, compiled_prompt=compiled)
+    # 2. Compile Base Prompt
+    base_prompt = compile_prompt_pipeline(request)
+
+    # 3. Use Gemini to Improve the Prompt
+    improvement_instruction = (
+        "You are an expert AI Architect and Prompt Engineer.\n"
+        "Your task is to take the following raw user prompt configuration and improve it into a highly optimized, "
+        "professional, and robust prompt ready to be sent to an LLM. Do NOT answer the prompt itself, ONLY rewrite it.\n"
+        "Ensure you maintain all the original constraints, roles, task instructions, and reasoning patterns specified.\n\n"
+        "### Raw Prompt Configuration:\n"
+        f"{base_prompt}"
+    )
+    
+    improved_prompt = await call_gemini(improvement_instruction)
+
+    return PromptResponse(template_id=db_template.id, compiled_prompt=improved_prompt)
 
 @app.post("/api/execute", response_model=ExecuteResponse)
 async def execute_prompt(request: ExecuteRequest, db: Session = Depends(get_db)):
-    # Mock LLM Delay
-    await asyncio.sleep(1)
-    
-    mock_response = f"Here is the simulated LLM output for your prompt:\n\n[START OUTPUT]\nI am acting as the requested role.\nHere is the completion for the task...\n[END OUTPUT]"
+    # Use Gemini to generate the real response based on the compiled prompt
+    real_response = await call_gemini(request.compiled_prompt)
     
     db_execution = ExecutionLog(
         template_id=request.template_id,
         compiled_prompt=request.compiled_prompt,
-        llm_response=mock_response,
+        llm_response=real_response,
         hitl_status="pending"
     )
     db.add(db_execution)
@@ -149,7 +197,7 @@ async def execute_prompt(request: ExecuteRequest, db: Session = Depends(get_db))
 
     return ExecuteResponse(
         execution_id=db_execution.id,
-        llm_response=mock_response,
+        llm_response=real_response,
         status="pending"
     )
 
@@ -170,11 +218,11 @@ async def refine_execution(request: RefineRequest, db: Session = Depends(get_db)
         
     db_exec.hitl_status = "rejected_and_refined"
     
+    # Construct the critique prompt
     new_prompt = db_exec.compiled_prompt + f"\n\nPrevious Response:\n{db_exec.llm_response}\n\nCritique: Analyze your previous response for logical errors and rewrite it."
     
-    # Mock delay
-    await asyncio.sleep(1)
-    refined_response = f"Here is the refined output after critique:\n\n[REFINED OUTPUT]\nCorrected the previous logic...\n[END REFINED OUTPUT]"
+    # Use Gemini to generate the refined response
+    refined_response = await call_gemini(new_prompt)
     
     db_new_exec = ExecutionLog(
         template_id=db_exec.template_id,
