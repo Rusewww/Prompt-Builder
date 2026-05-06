@@ -78,6 +78,7 @@ class ExecutionLog(Base):
     llm_response = Column(Text)
     hitl_status = Column(String) # pending, approved, rejected
     is_favorite = Column(Boolean, default=False)
+    title = Column(String, nullable=True)
 
     template = relationship("PromptTemplate", back_populates="executions")
 
@@ -126,10 +127,14 @@ class LibraryItem(BaseModel):
     task: str
     compiled_prompt: str
     is_favorite: bool
+    title: str | None = None
 
 class SaveDirectRequest(BaseModel):
     template_id: int
     compiled_prompt: str
+
+class RenameRequest(BaseModel):
+    title: str
 
 app = FastAPI(title="Prompt Builder API")
 
@@ -277,7 +282,8 @@ def get_prompt_library(db: Session = Depends(get_db)):
             role=template.role if template else "Unknown",
             task=template.task if template else "Unknown",
             compiled_prompt=exec_log.compiled_prompt,
-            is_favorite=exec_log.is_favorite
+            is_favorite=exec_log.is_favorite,
+            title=exec_log.title
         ))
     
     return library[::-1]
@@ -299,6 +305,15 @@ def toggle_favorite(exec_id: int, db: Session = Depends(get_db)):
     db_exec.is_favorite = not db_exec.is_favorite
     db.commit()
     return {"status": "success", "is_favorite": db_exec.is_favorite}
+
+@app.patch("/api/prompts/library/{exec_id}/rename")
+def rename_library_item(exec_id: int, request: RenameRequest, db: Session = Depends(get_db)):
+    db_exec = db.query(ExecutionLog).filter(ExecutionLog.id == exec_id).first()
+    if not db_exec:
+        raise HTTPException(status_code=404, detail="Item not found")
+    db_exec.title = request.title
+    db.commit()
+    return {"status": "success", "title": db_exec.title}
 
 @app.post("/api/prompts/save_direct")
 def save_prompt_direct(request: SaveDirectRequest, db: Session = Depends(get_db)):

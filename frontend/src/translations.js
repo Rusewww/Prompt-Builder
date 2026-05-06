@@ -42,7 +42,10 @@ export const translations = {
     useRoleToggle: "Enable Role",
     useContextToggle: "Enable Context",
     copyPromptBtn: "Copy Prompt",
-    saveWithoutTestingBtn: "Save without Testing"
+    saveWithoutTestingBtn: "Save without Testing",
+    renameBtn: "Rename",
+    saveNameBtn: "Save Name",
+    cancelBtn: "Cancel"
   },
   uk: {
     appTitle: "Конструктор Промптів",
@@ -87,6 +90,9 @@ export const translations = {
     useRoleToggle: "Увімкнути Роль",
     useContextToggle: "Увімкнути Контекст",
     copyPromptBtn: "Копіювати промпт",
-    saveWithoutTestingBtn: "Зберегти без тестування"
+    saveWithoutTestingBtn: "Зберегти без тестування",
+    renameBtn: "Перейменувати",
+    saveNameBtn: "Зберегти назву",
+    cancelBtn: "Скасувати"
   }
 };

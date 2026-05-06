@@ -322,6 +322,13 @@ textarea {
 }
 
 /* Groups */
+.form-block {
+  border: 1px solid var(--border-color);
+  padding: 1.25rem;
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-surface);
+}
+
 .examples-group {
   border: 1px solid var(--border-color);
   padding: 1.25rem;
@@ -620,12 +627,42 @@ button:disabled {
   transform: scale(1.1);
 }
 
-.favorite-btn {
-  color: var(--primary-color);
+.delete-btn {
+  color: var(--danger-color);
 }
 
 .delete-btn:hover {
-  color: var(--error-color);
+  background-color: var(--bg-examples);
+}
+
+.success-btn {
+  color: var(--success-color);
+}
+
+.success-btn:hover {
+  background-color: var(--bg-examples);
+}
+
+.edit-title-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.edit-title-input {
+  flex-grow: 1;
+  padding: 0.25rem 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: 1px solid var(--primary-color);
+  border-radius: var(--radius-sm);
+  background-color: var(--bg-input);
+  color: var(--text-primary);
+}
+
+.favorite-btn {
+  color: var(--primary-color);
 }
 
 .card-header {

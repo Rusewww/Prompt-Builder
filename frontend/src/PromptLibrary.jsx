@@ -6,6 +6,8 @@ const PromptLibrary = () => {
   const [prompts, setPrompts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editTitleValue, setEditTitleValue] = useState("");
 
   useEffect(() => {
     fetchLibrary();
@@ -50,6 +52,23 @@ const PromptLibrary = () => {
     }
   };
 
+  const handleRenameSave = async (id) => {
+    try {
+      const response = await fetch(`/api/prompts/library/${id}/rename`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: editTitleValue })
+      });
+      const data = await response.json();
+      if (data.status === 'success') {
+        setPrompts(prompts.map(p => p.id === id ? { ...p, title: data.title } : p));
+      }
+      setEditingId(null);
+    } catch (error) {
+      console.error('Failed to rename prompt:', error);
+    }
+  };
+
   if (loading) {
     return <div className="empty-state"><p>Loading...</p></div>;
   }
@@ -67,8 +86,34 @@ const PromptLibrary = () => {
           {prompts.map((prompt) => (
             <div key={prompt.id} className={`library-card ${prompt.is_favorite ? 'favorite-glow' : ''}`}>
               <div className="card-header">
-                <span className="card-role">{prompt.role}</span>
+                {editingId === prompt.id ? (
+                  <div className="edit-title-container">
+                    <input 
+                      type="text" 
+                      value={editTitleValue} 
+                      onChange={(e) => setEditTitleValue(e.target.value)}
+                      className="edit-title-input"
+                      autoFocus
+                    />
+                    <button className="icon-btn success-btn" onClick={() => handleRenameSave(prompt.id)} title={t('saveNameBtn')}>✔️</button>
+                    <button className="icon-btn delete-btn" onClick={() => setEditingId(null)} title={t('cancelBtn')}>✕</button>
+                  </div>
+                ) : (
+                  <span className="card-role">{prompt.title || prompt.role}</span>
+                )}
                 <div className="card-actions">
+                  {editingId !== prompt.id && (
+                    <button 
+                      className="icon-btn"
+                      onClick={() => {
+                        setEditingId(prompt.id);
+                        setEditTitleValue(prompt.title || prompt.role);
+                      }}
+                      title={t('renameBtn')}
+                    >
+                      ✏️
+                    </button>
+                  )}
                   <button 
                     className="icon-btn favorite-btn"
                     onClick={() => handleFavorite(prompt.id)}

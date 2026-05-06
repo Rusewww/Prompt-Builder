@@ -141,7 +141,7 @@ const PromptBuilder = () => {
         <div className="stage-panel stage-1">
           <h2>{t('stage1Title')}</h2>
           <form onSubmit={handleCompile} className="config-form">
-            <div className="form-group">
+            <div className="form-group form-block">
               <div className="label-with-toggle">
                 <label>{t('roleLabel')}</label>
                 <label className="switch">
@@ -156,7 +156,7 @@ const PromptBuilder = () => {
               </div>
             </div>
 
-            <div className="form-group">
+            <div className="form-group form-block">
               <div className="label-with-toggle">
                 <label>{t('contextLabel')}</label>
                 <label className="switch">
@@ -171,7 +171,7 @@ const PromptBuilder = () => {
               </div>
             </div>
 
-            <div className="form-group">
+            <div className="form-group form-block">
               <div className="label-with-toggle">
                 <label>{t('taskLabel')}</label>
                 <label className="switch">
@@ -186,7 +186,7 @@ const PromptBuilder = () => {
               </div>
             </div>
 
-            <div className="form-group">
+            <div className="form-group form-block">
               <div className="label-with-toggle">
                 <label>{t('reasoningLabel')}</label>
                 <label className="switch">

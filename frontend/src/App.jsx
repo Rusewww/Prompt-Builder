@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import PromptBuilder from './PromptBuilder';
 import PromptLibrary from './PromptLibrary';
 import { LanguageProvider, useLanguage } from './LanguageContext';
@@ -7,7 +8,7 @@ import './App.css';
 
 function AppContent() {
   const { t, toggleLanguage, language } = useLanguage();
-  const [currentView, setCurrentView] = useState('builder'); // 'builder' or 'library'
+  const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   
   const [theme, setTheme] = useState(() => {
@@ -35,10 +36,10 @@ function AppContent() {
             </button>
             {menuOpen && (
               <div className="burger-dropdown">
-                <button onClick={() => { setCurrentView('builder'); setMenuOpen(false); }}>
+                <button onClick={() => { navigate('/'); setMenuOpen(false); }}>
                   {t('builderBtn')}
                 </button>
-                <button onClick={() => { setCurrentView('library'); setMenuOpen(false); }}>
+                <button onClick={() => { navigate('/library'); setMenuOpen(false); }}>
                   {t('libraryBtn')}
                 </button>
               </div>
@@ -66,7 +67,10 @@ function AppContent() {
         </div>
       </header>
       <main>
-        {currentView === 'builder' ? <PromptBuilder /> : <PromptLibrary />}
+        <Routes>
+          <Route path="/" element={<PromptBuilder />} />
+          <Route path="/library" element={<PromptLibrary />} />
+        </Routes>
       </main>
     </div>
   );
