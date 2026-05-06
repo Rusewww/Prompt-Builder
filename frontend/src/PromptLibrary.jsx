@@ -86,21 +86,30 @@ const PromptLibrary = () => {
           {prompts.map((prompt) => (
             <div key={prompt.id} className={`library-card ${prompt.is_favorite ? 'favorite-glow' : ''}`}>
               <div className="card-header">
-                {editingId === prompt.id ? (
-                  <div className="edit-title-container">
-                    <input 
-                      type="text" 
-                      value={editTitleValue} 
-                      onChange={(e) => setEditTitleValue(e.target.value)}
-                      className="edit-title-input"
-                      autoFocus
-                    />
-                    <button className="icon-btn success-btn" onClick={() => handleRenameSave(prompt.id)} title={t('saveNameBtn')}>✔️</button>
-                    <button className="icon-btn delete-btn" onClick={() => setEditingId(null)} title={t('cancelBtn')}>✕</button>
-                  </div>
-                ) : (
-                  <span className="card-role">{prompt.title || prompt.role}</span>
-                )}
+                <div className="title-section" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexGrow: 1 }}>
+                  <button 
+                    className="icon-btn favorite-btn"
+                    onClick={() => handleFavorite(prompt.id)}
+                    title={prompt.is_favorite ? t('unfavoriteBtn') : t('favoriteBtn')}
+                  >
+                    {prompt.is_favorite ? '★' : '☆'}
+                  </button>
+                  {editingId === prompt.id ? (
+                    <div className="edit-title-container">
+                      <input 
+                        type="text" 
+                        value={editTitleValue} 
+                        onChange={(e) => setEditTitleValue(e.target.value)}
+                        className="edit-title-input"
+                        autoFocus
+                      />
+                      <button className="icon-btn success-btn" onClick={() => handleRenameSave(prompt.id)} title={t('saveNameBtn')}>✔️</button>
+                      <button className="icon-btn delete-btn" onClick={() => setEditingId(null)} title={t('cancelBtn')}>✕</button>
+                    </div>
+                  ) : (
+                    <span className="card-role">{prompt.title || prompt.role}</span>
+                  )}
+                </div>
                 <div className="card-actions">
                   {editingId !== prompt.id && (
                     <button 
@@ -114,13 +123,6 @@ const PromptLibrary = () => {
                       ✏️
                     </button>
                   )}
-                  <button 
-                    className="icon-btn favorite-btn"
-                    onClick={() => handleFavorite(prompt.id)}
-                    title={prompt.is_favorite ? t('unfavoriteBtn') : t('favoriteBtn')}
-                  >
-                    {prompt.is_favorite ? '★' : '☆'}
-                  </button>
                   <button 
                     className="btn-secondary btn-small copy-btn"
                     onClick={() => handleCopy(prompt.id, prompt.compiled_prompt)}

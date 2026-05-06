@@ -117,9 +117,11 @@ body {
   border: 1px solid var(--border-color);
   font-size: 1.25rem;
   cursor: pointer;
-  padding: 0.5rem;
+  padding: 0;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: var(--radius-sm);
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   color: var(--text-primary);
@@ -129,8 +131,6 @@ body {
 .lang-toggle-btn {
   font-size: 0.875rem;
   font-weight: 600;
-  width: 2.5rem;
-  height: 2.5rem;
 }
 
 .theme-toggle-btn:hover {
@@ -621,6 +621,12 @@ button:disabled {
   cursor: pointer;
   color: var(--text-secondary);
   transition: color 0.2s, transform 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
 }
 
 .icon-btn:hover {
