@@ -24,6 +24,7 @@ const PromptBuilder = () => {
   const [compiledResult, setCompiledResult] = useState('');
   const [templateId, setTemplateId] = useState(null);
   const [executionId, setExecutionId] = useState(null);
+  const [errorMessage, setErrorMessage] = useState('');
   const [llmResponse, setLlmResponse] = useState('');
   const [status, setStatus] = useState('idle'); // idle, compiling, compiled, executing, review, approved
 
@@ -74,13 +75,18 @@ const PromptBuilder = () => {
         body: JSON.stringify(payload)
       });
       const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.detail || 'Failed to compile prompt');
+      }
       setCompiledResult(data.compiled_prompt);
       setTemplateId(data.template_id);
       setStatus('compiled');
       setLlmResponse('');
+      setErrorMessage('');
       setCurrentStep(2); // Move to next step on success
     } catch (error) {
       console.error('Compilation failed:', error);
+      setErrorMessage(error.message);
       setStatus('idle');
     }
   };
@@ -97,11 +103,16 @@ const PromptBuilder = () => {
         })
       });
       const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.detail || 'Failed to execute prompt');
+      }
       setLlmResponse(data.llm_response);
       setExecutionId(data.execution_id);
+      setErrorMessage('');
       setStatus('review');
     } catch (error) {
       console.error('Execution failed:', error);
+      setErrorMessage(error.message);
       setStatus('compiled');
     }
   };
@@ -126,11 +137,16 @@ const PromptBuilder = () => {
         body: JSON.stringify({ execution_id: executionId })
       });
       const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.detail || 'Failed to refine prompt');
+      }
       setLlmResponse(data.llm_response);
       setExecutionId(data.execution_id);
+      setErrorMessage('');
       setStatus('review');
     } catch (error) {
       console.error('Refine failed:', error);
+      setErrorMessage(error.message);
       setStatus('review');
     }
   };
@@ -140,6 +156,7 @@ const PromptBuilder = () => {
       {currentStep === 1 && (
         <div className="stage-panel stage-1">
           <h2>{t('stage1Title')}</h2>
+          {errorMessage && <div className="alert-error" style={{ marginBottom: '1rem' }}>{errorMessage}</div>}
           <form onSubmit={handleCompile} className="config-form">
             <div className="form-group form-block">
               <div className="label-with-toggle">
@@ -280,6 +297,8 @@ const PromptBuilder = () => {
               <h2>{t('stage2Title')}</h2>
             </div>
             
+            {errorMessage && <div className="alert-error" style={{ marginBottom: '1rem' }}>{errorMessage}</div>}
+
             {compiledResult ? (
               <div className="preview-section">
                 <h3>{t('compiledPromptHeader')}</h3>
