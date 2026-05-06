@@ -31,6 +31,8 @@ erDiagram
         text compiled_prompt "The prompt sent to LLM"
         text llm_response "The response from Gemini"
         string hitl_status "pending, approved, rejected_and_refined"
+        boolean is_favorite "Mark as favorite"
+        string title "Custom name for saved prompt"
     }
 
     PROMPT_TEMPLATES ||--o{ FEW_SHOT_EXAMPLES : "contains (1:N)"
@@ -46,11 +48,15 @@ flowchart TD
     subgraph Client [Client / Browser]
         subgraph ReactApp [Vite React App]
             App[App.jsx - Root]
+            RouterLayer[React Router]
             UI[PromptBuilder.jsx]
+            Lib[PromptLibrary.jsx]
             S1[Stage 1: Config Form]
             S2[Stage 2: HITL Playground]
             
-            App --> UI
+            App --> RouterLayer
+            RouterLayer -->|Route /| UI
+            RouterLayer -->|Route /library| Lib
             UI --> S1
             UI --> S2
         end
