@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import PromptBuilder from './PromptBuilder';
 import PromptLibrary from './PromptLibrary';
 import { LanguageProvider, useLanguage } from './LanguageContext';
@@ -9,7 +9,8 @@ import './App.css';
 function AppContent() {
   const { t, toggleLanguage, language } = useLanguage();
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
+  const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   
   const [theme, setTheme] = useState(() => {
     const savedTheme = localStorage.getItem('theme');
@@ -28,50 +29,60 @@ function AppContent() {
 
   return (
     <div className="App">
-      <header className="app-header">
-        <div className="header-left">
-          <div className="burger-menu-container">
-            <button className="burger-btn" onClick={() => setMenuOpen(!menuOpen)} aria-label={t('menuBtn')}>
-              ☰
-            </button>
-            {menuOpen && (
-              <div className="burger-dropdown">
-                <button onClick={() => { navigate('/'); setMenuOpen(false); }}>
-                  {t('builderBtn')}
-                </button>
-                <button onClick={() => { navigate('/library'); setMenuOpen(false); }}>
-                  {t('libraryBtn')}
-                </button>
-              </div>
-            )}
-          </div>
-          <h1 className="app-title">{t('appTitle')}</h1>
-        </div>
-        <div className="header-actions">
+      <nav className={`sidebar ${sidebarOpen ? '' : 'collapsed'}`}>
+        <div className="sidebar-brand">
+          <h1 className="sidebar-label">{t('appTitle')}</h1>
           <button 
-            className="theme-toggle-btn lang-toggle-btn" 
+            className="sidebar-toggle-btn"
+            onClick={() => setSidebarOpen(prev => !prev)}
+            title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+          >
+            {sidebarOpen ? '◀' : '▶'}
+          </button>
+        </div>
+        <div className="sidebar-nav">
+          <button 
+            className={`nav-item ${location.pathname === '/' ? 'active' : ''}`}
+            onClick={() => navigate('/')}
+            title={t('builderBtn')}
+          >
+            <span className="nav-icon">🔧</span>
+            <span className="sidebar-label">{t('builderBtn')}</span>
+          </button>
+          <button 
+            className={`nav-item ${location.pathname === '/library' ? 'active' : ''}`}
+            onClick={() => navigate('/library')}
+            title={t('libraryBtn')}
+          >
+            <span className="nav-icon">📚</span>
+            <span className="sidebar-label">{t('libraryBtn')}</span>
+          </button>
+        </div>
+        <div className="sidebar-footer">
+          <button 
+            className="sidebar-footer-btn"
             onClick={toggleLanguage}
-            aria-label="Toggle language"
             title={`Switch to ${language === 'en' ? 'Ukrainian' : 'English'}`}
           >
-            {t('toggleLang')}
+            <span className="nav-icon">🌐</span>
+            <span className="sidebar-label">{t('toggleLang')}</span>
           </button>
           <button 
-            className="theme-toggle-btn" 
-            onClick={toggleTheme} 
-            aria-label="Toggle theme"
+            className="sidebar-footer-btn"
+            onClick={toggleTheme}
             title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
           >
-            {theme === 'light' ? '🌙' : '☀️'}
+            <span className="nav-icon">{theme === 'light' ? '🌙' : '☀️'}</span>
+            <span className="sidebar-label">{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
           </button>
         </div>
-      </header>
-      <main>
+      </nav>
+      <div className="main-content">
         <Routes>
           <Route path="/" element={<PromptBuilder />} />
           <Route path="/library" element={<PromptLibrary />} />
         </Routes>
-      </main>
+      </div>
     </div>
   );
 }

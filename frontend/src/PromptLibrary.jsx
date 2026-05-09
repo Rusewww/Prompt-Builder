@@ -84,7 +84,7 @@ const PromptLibrary = () => {
       ) : (
         <div className="library-grid">
           {prompts.map((prompt) => (
-            <div key={prompt.id} className={`library-card ${prompt.is_favorite ? 'favorite-glow' : ''}`}>
+            <div key={prompt.id} className={`library-card ${prompt.is_favorite ? 'favorite-glow' : ''}`} style={{ animationDelay: `${prompts.indexOf(prompt) * 0.06}s` }}>
               <div className="card-header">
                 <div className="title-section" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexGrow: 1 }}>
                   <button 

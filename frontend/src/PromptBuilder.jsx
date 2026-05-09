@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 import { useLanguage } from './LanguageContext';
 
+const StepIndicator = ({ currentStep }) => (
+  <div className="step-indicator">
+    <span className={`step-dot ${currentStep === 1 ? 'active' : 'completed'}`}>1</span>
+    <span className={`step-line ${currentStep >= 2 ? 'completed' : ''}`} />
+    <span className={`step-dot ${currentStep === 2 ? 'active' : ''}`}>2</span>
+  </div>
+);
 const PromptBuilder = () => {
   const { t } = useLanguage();
   const [currentStep, setCurrentStep] = useState(1);
@@ -155,6 +162,7 @@ const PromptBuilder = () => {
 
   return (
     <div className="prompt-builder-container">
+      <StepIndicator currentStep={currentStep} />
       {currentStep === 1 && (
         <div className="stage-panel stage-1">
           <h2>{t('stage1Title')}</h2>
@@ -287,6 +295,7 @@ const PromptBuilder = () => {
             </div>
 
             <button type="submit" className="btn-primary" disabled={status === 'compiling'}>
+              {status === 'compiling' && <span className="spinner" />}
               {status === 'compiling' ? t('compilingBtn') : t('compileBtn')}
             </button>
           </form>
@@ -323,6 +332,7 @@ const PromptBuilder = () => {
                       onClick={handleExecute} 
                       disabled={status === 'executing'}
                     >
+                      {status === 'executing' && <span className="spinner" />}
                       {status === 'executing' ? t('executingBtn') : t('sendLlmBtn')}
                     </button>
                     <button 
