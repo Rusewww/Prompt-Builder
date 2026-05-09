@@ -8,6 +8,13 @@ const StepIndicator = ({ currentStep }) => (
     <span className={`step-dot ${currentStep === 2 ? 'active' : ''}`}>2</span>
   </div>
 );
+
+const InfoTip = ({ text }) => (
+  <span className="info-tip">
+    <span className="info-tip-icon">i</span>
+    <span className="info-tip-text">{text}</span>
+  </span>
+);
 const PromptBuilder = () => {
   const { t } = useLanguage();
   const [currentStep, setCurrentStep] = useState(1);
@@ -170,7 +177,7 @@ const PromptBuilder = () => {
           <form onSubmit={handleCompile} className="config-form">
             <div className="form-group form-block">
               <div className="label-with-toggle">
-                <label>{t('roleLabel')}</label>
+                <label>{t('roleLabel')}<InfoTip text={t('tipRole')} /></label>
                 <label className="switch">
                   <input type="checkbox" checked={useRole} onChange={e => setUseRole(e.target.checked)} />
                   <span className="slider round"></span>
@@ -185,7 +192,7 @@ const PromptBuilder = () => {
 
             <div className="form-group form-block">
               <div className="label-with-toggle">
-                <label>{t('contextLabel')}</label>
+                <label>{t('contextLabel')}<InfoTip text={t('tipContext')} /></label>
                 <label className="switch">
                   <input type="checkbox" checked={useContext} onChange={e => setUseContext(e.target.checked)} />
                   <span className="slider round"></span>
@@ -200,7 +207,7 @@ const PromptBuilder = () => {
 
             <div className="form-group form-block">
               <div className="label-with-toggle">
-                <label>{t('taskLabel')}</label>
+                <label>{t('taskLabel')}<InfoTip text={t('tipTask')} /></label>
                 <label className="switch">
                   <input type="checkbox" checked={useTask} onChange={e => setUseTask(e.target.checked)} />
                   <span className="slider round"></span>
@@ -215,7 +222,7 @@ const PromptBuilder = () => {
 
             <div className="form-group form-block">
               <div className="label-with-toggle">
-                <label>{t('reasoningLabel')}</label>
+                <label>{t('reasoningLabel')}<InfoTip text={t('tipReasoning')} /></label>
                 <label className="switch">
                   <input type="checkbox" checked={useReasoning} onChange={e => setUseReasoning(e.target.checked)} />
                   <span className="slider round"></span>
@@ -234,7 +241,7 @@ const PromptBuilder = () => {
 
             <div className="form-group examples-group">
               <div className="label-with-toggle">
-                <label>{t('examplesLabel')}</label>
+                <label>{t('examplesLabel')}<InfoTip text={t('tipExamples')} /></label>
                 <label className="switch">
                   <input type="checkbox" checked={useExamples} onChange={e => setUseExamples(e.target.checked)} />
                   <span className="slider round"></span>
@@ -270,7 +277,7 @@ const PromptBuilder = () => {
 
             <div className="form-group guardrails-group">
               <div className="label-with-toggle">
-                <label>{t('guardrailsLabel')}</label>
+                <label>{t('guardrailsLabel')}<InfoTip text={t('tipGuardrails')} /></label>
                 <label className="switch">
                   <input type="checkbox" checked={useGuardrails} onChange={e => setUseGuardrails(e.target.checked)} />
                   <span className="slider round"></span>
@@ -280,21 +287,21 @@ const PromptBuilder = () => {
                 <div className="collapsible-inner">
                   <label className="checkbox-label">
                     <input type="checkbox" name="use_cove_verification" checked={formData.use_cove_verification} onChange={handleInputChange} />
-                    {t('coveVerificationLabel')}
+                    {t('coveVerificationLabel')}<InfoTip text={t('tipCoveVerification')} />
                   </label>
                   <label className="checkbox-label">
                     <input type="checkbox" name="use_cove" checked={formData.use_cove} onChange={handleInputChange} />
-                    {t('coveLabel')}
+                    {t('coveLabel')}<InfoTip text={t('tipCove')} />
                   </label>
                   <label className="checkbox-label">
                     <input type="checkbox" name="use_self_refine" checked={formData.use_self_refine} onChange={handleInputChange} />
-                    {t('selfRefineLabel')}
+                    {t('selfRefineLabel')}<InfoTip text={t('tipSelfRefine')} />
                   </label>
                 </div>
               </div>
             </div>
 
-            <button type="submit" className="btn-primary" disabled={status === 'compiling'}>
+            <button type="submit" className="btn-primary btn-cta" disabled={status === 'compiling'}>
               {status === 'compiling' && <span className="spinner" />}
               {status === 'compiling' ? t('compilingBtn') : t('compileBtn')}
             </button>
@@ -322,7 +329,7 @@ const PromptBuilder = () => {
                 {(status === 'compiled' || status === 'executing') && (
                   <div className="hitl-actions mt-4">
                     <button 
-                      className="btn-secondary" 
+                      className="btn-ghost" 
                       onClick={() => navigator.clipboard.writeText(compiledResult)}
                     >
                       {t('copyPromptBtn')}

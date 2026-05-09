@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from './LanguageContext';
 
 const PromptLibrary = () => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [prompts, setPrompts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState(null);
@@ -79,7 +81,12 @@ const PromptLibrary = () => {
       
       {prompts.length === 0 ? (
         <div className="empty-state">
-          <p>{t('noSavedPrompts')}</p>
+          <div className="empty-state-icon">📚</div>
+          <p className="empty-state-title">{t('noSavedPrompts')}</p>
+          <p className="empty-state-subtitle">{t('noSavedPromptsSubtitle')}</p>
+          <button className="btn-primary" onClick={() => navigate('/')}>
+            {t('createFirstPrompt')}
+          </button>
         </div>
       ) : (
         <div className="library-grid">

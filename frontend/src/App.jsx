@@ -37,7 +37,9 @@ function AppContent() {
             onClick={() => setSidebarOpen(prev => !prev)}
             title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
           >
-            {sidebarOpen ? '◀' : '▶'}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
           </button>
         </div>
         <div className="sidebar-nav">
