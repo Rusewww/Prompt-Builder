@@ -10,6 +10,7 @@ const PromptBuilder = () => {
     task: 'Write unit tests for the auth module.',
     reasoning_pattern: 'Chain-of-Draft',
     use_cove: true,
+    use_cove_verification: false,
     use_self_refine: false,
     examples: []
   });
@@ -66,6 +67,7 @@ const PromptBuilder = () => {
         reasoning_pattern: useReasoning ? formData.reasoning_pattern : '',
         examples: useExamples ? formData.examples : [],
         use_cove: useGuardrails ? formData.use_cove : false,
+        use_cove_verification: useGuardrails ? formData.use_cove_verification : false,
         use_self_refine: useGuardrails ? formData.use_self_refine : false,
       };
 
@@ -268,6 +270,10 @@ const PromptBuilder = () => {
               </div>
               <div className={`collapsible-wrapper ${useGuardrails ? 'expanded' : ''}`}>
                 <div className="collapsible-inner">
+                  <label className="checkbox-label">
+                    <input type="checkbox" name="use_cove_verification" checked={formData.use_cove_verification} onChange={handleInputChange} />
+                    {t('coveVerificationLabel')}
+                  </label>
                   <label className="checkbox-label">
                     <input type="checkbox" name="use_cove" checked={formData.use_cove} onChange={handleInputChange} />
                     {t('coveLabel')}

@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, ForeignKey, Text
+from sqlalchemy import create_engine, Column, Integer, String, Boolean, ForeignKey, Text, text
 from sqlalchemy.orm import declarative_base, sessionmaker, Session, relationship
 import os
 from dotenv import load_dotenv
@@ -56,6 +56,7 @@ class PromptTemplate(Base):
     task = Column(Text)
     reasoning_pattern = Column(String)
     use_cove = Column(Boolean)
+    use_cove_verification = Column(Boolean, default=False)
     use_self_refine = Column(Boolean, default=False)
     
     examples = relationship("FewShotExample", back_populates="template")
@@ -84,6 +85,14 @@ class ExecutionLog(Base):
 
 Base.metadata.create_all(bind=engine)
 
+# --- Lightweight Migration ---
+with engine.connect() as conn:
+    try:
+        conn.execute(text("ALTER TABLE prompt_templates ADD COLUMN use_cove_verification BOOLEAN DEFAULT 0"))
+        conn.commit()
+    except Exception:
+        pass  # Column already exists
+
 def get_db():
     db = SessionLocal()
     try:
@@ -102,6 +111,7 @@ class PromptRequest(BaseModel):
     task: str
     reasoning_pattern: str
     use_cove: bool
+    use_cove_verification: bool = False
     use_self_refine: bool = False
     examples: List[ExampleSchema] = []
 
@@ -164,8 +174,13 @@ def compile_prompt_pipeline(data: PromptRequest) -> str:
     elif data.reasoning_pattern == "Chain-of-Thought":
         prompt += "Reasoning Strategy: Think step-by-step.\n\n"
         
+    if data.use_cove_verification:
+        prompt += ("Guardrails — Chain-of-Verification (CoVe): Before finalizing your answer, "
+                   "generate a list of verification questions for each key claim you make, "
+                   "then systematically answer each question to confirm or correct your claims.\n\n")
+
     if data.use_cove:
-        prompt += "Guardrails: Conclude your response with a discrete Fact-Check List verifying your claims.\n"
+        prompt += "Guardrails — Fact-Check List: Conclude your response with a discrete Fact-Check List verifying your claims.\n"
         
     return prompt
 
@@ -178,6 +193,7 @@ async def compile_prompt(request: PromptRequest, db: Session = Depends(get_db)):
         task=request.task,
         reasoning_pattern=request.reasoning_pattern,
         use_cove=request.use_cove,
+        use_cove_verification=request.use_cove_verification,
         use_self_refine=request.use_self_refine
     )
     db.add(db_template)
