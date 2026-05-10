@@ -154,35 +154,111 @@ def read_root():
 
 # --- Core Logic ---
 def compile_prompt_pipeline(data: PromptRequest) -> str:
-    prompt = ""
+    """Build a structured base prompt from user configuration."""
+    sections = []
+
+    # --- Identity & Persona ---
     if data.role and data.role.strip():
-        prompt += f"Role: {data.role}\n\n"
+        sections.append(
+            f"## Role & Persona\n"
+            f"{data.role}\n"
+            f"Maintain this role consistently throughout the entire response. "
+            f"Your expertise should be evident in terminology, depth of analysis, and professional judgment."
+        )
+
+    # --- Context & Constraints ---
     if data.context and data.context.strip():
-        prompt += f"Context & Constraints:\n{data.context}\n\n"
+        sections.append(
+            f"## Context & Technical Requirements\n"
+            f"{data.context}"
+        )
+
+    # --- Task Instructions ---
     if data.task and data.task.strip():
-        prompt += f"Task:\n{data.task}\n\n"
-    
+        sections.append(
+            f"## Task Instructions\n"
+            f"{data.task}\n"
+            f"Address every aspect of this task. If the task is ambiguous, state your assumptions explicitly before proceeding."
+        )
+
+    # --- Few-Shot Examples ---
     if data.examples:
-        prompt += "Examples:\n"
+        example_lines = ["## Examples (Few-Shot)\n"
+                         "Follow the pattern demonstrated in these examples precisely:"]
         for i, ex in enumerate(data.examples, 1):
-            prompt += f"  Example {i} Input: {ex.input_text}\n"
-            prompt += f"  Example {i} Output: {ex.output_text}\n"
-        prompt += "\n"
-    
-    if data.reasoning_pattern == "Chain-of-Draft":
-        prompt += "Reasoning Strategy: Use Chain-of-Draft. Keep your intermediate reasoning steps strictly under 5 words per step.\n\n"
-    elif data.reasoning_pattern == "Chain-of-Thought":
-        prompt += "Reasoning Strategy: Think step-by-step.\n\n"
-        
+            example_lines.append(
+                f"\n**Example {i}:**\n"
+                f"- **Input:** {ex.input_text}\n"
+                f"- **Expected Output:** {ex.output_text}"
+            )
+        sections.append("\n".join(example_lines))
+
+    # --- Reasoning Strategy ---
+    if data.reasoning_pattern and data.reasoning_pattern != "Zero-Shot":
+        if data.reasoning_pattern == "Chain-of-Thought":
+            sections.append(
+                "## Reasoning Methodology: Chain-of-Thought (CoT)\n"
+                "Before providing your final answer, think through the problem step-by-step:\n"
+                "1. Identify the core problem or question.\n"
+                "2. Break it down into logical sub-problems.\n"
+                "3. Reason through each sub-problem sequentially, showing your work.\n"
+                "4. Synthesize the sub-conclusions into a final, coherent answer.\n\n"
+                "Present your reasoning path clearly before the final output."
+            )
+        elif data.reasoning_pattern == "Chain-of-Draft":
+            sections.append(
+                "## Reasoning Methodology: Chain-of-Draft (CoD)\n"
+                "Use the Chain-of-Draft method — produce minimal, compressed reasoning steps:\n"
+                "1. Each intermediate reasoning step must be **strictly under 5 words**.\n"
+                "2. Use shorthand, abbreviations, and symbolic notation where possible.\n"
+                "3. Only expand into full prose for the final answer.\n\n"
+                "Format: Show the draft chain first, then the complete answer."
+            )
+
+    # --- Guardrails ---
+    guardrail_items = []
+
     if data.use_cove_verification:
-        prompt += ("Guardrails — Chain-of-Verification (CoVe): Before finalizing your answer, "
-                   "generate a list of verification questions for each key claim you make, "
-                   "then systematically answer each question to confirm or correct your claims.\n\n")
+        guardrail_items.append(
+            "### Chain-of-Verification (CoVe)\n"
+            "After drafting your response, perform self-verification:\n"
+            "1. Extract every factual claim from your response.\n"
+            "2. For each claim, generate a targeted verification question.\n"
+            "3. Answer each verification question independently.\n"
+            "4. Compare the verification answers against your original claims.\n"
+            "5. Correct any claims that fail verification before finalizing."
+        )
 
     if data.use_cove:
-        prompt += "Guardrails — Fact-Check List: Conclude your response with a discrete Fact-Check List verifying your claims.\n"
-        
-    return prompt
+        guardrail_items.append(
+            "### Fact-Check List\n"
+            "Conclude your response with a **Fact-Check List** section:\n"
+            "- List each key factual claim from your response.\n"
+            "- Mark each as ✅ Verified or ⚠️ Needs Review.\n"
+            "- Cite the reasoning or source for each verification."
+        )
+
+    if guardrail_items:
+        sections.append("## Quality Guardrails\n" + "\n\n".join(guardrail_items))
+
+    # --- Output Constraints ---
+    constraints = [
+        "- No conversational filler or hedging language.",
+        "- Be direct, precise, and technically rigorous.",
+    ]
+    if data.reasoning_pattern == "Chain-of-Draft":
+        constraints.append("- Reasoning steps < 5 words each.")
+    if data.use_cove:
+        constraints.append("- Conclude with a Fact-Check List.")
+    if data.use_cove_verification:
+        constraints.append("- Include verification step before finalizing.")
+
+    sections.append(
+        "## Constraint Summary\n" + "\n".join(constraints)
+    )
+
+    return "\n\n".join(sections)
+
 
 @app.post("/api/compile", response_model=PromptResponse)
 async def compile_prompt(request: PromptRequest, db: Session = Depends(get_db)):
@@ -208,16 +284,34 @@ async def compile_prompt(request: PromptRequest, db: Session = Depends(get_db)):
     # 2. Compile Base Prompt
     base_prompt = compile_prompt_pipeline(request)
 
-    # 3. Use Gemini to Improve the Prompt
+    # 3. Use Gemini to optimize the prompt using a detailed rubric
     improvement_instruction = (
-        "You are an expert AI Architect and Prompt Engineer.\n"
-        "Your task is to take the following raw user prompt configuration and improve it into a highly optimized, "
-        "professional, and robust prompt ready to be sent to an LLM.\n"
-        "CRITICAL RULES:\n"
-        "- Do NOT answer the prompt itself, ONLY rewrite it.\n"
-        "- Provide STRICTLY the prompt text with no conversational filler, no introductions, and no conclusions. Output ONLY the optimized prompt.\n"
-        "- Ensure you maintain all the original constraints, roles, task instructions, and reasoning patterns specified.\n\n"
-        "### Raw Prompt Configuration:\n"
+        "You are a world-class Prompt Engineer specializing in LLM optimization.\n\n"
+        "## Your Task\n"
+        "Transform the raw prompt configuration below into a production-grade, highly effective prompt. "
+        "Do NOT answer the prompt — ONLY rewrite and optimize it.\n\n"
+        "## Optimization Rubric (apply all that are relevant)\n"
+        "1. **Persona Grounding**: Expand the role into specific behavioral constraints — what the persona DOES, "
+        "what expertise they apply, and what tone/style they use.\n"
+        "2. **Task Decomposition**: If the task is broad, break it into clear numbered sub-tasks "
+        "with explicit deliverables for each.\n"
+        "3. **Output Format Specification**: Define the exact format the response should follow "
+        "(e.g., sections, code blocks, lists, tables). Be prescriptive.\n"
+        "4. **Boundary Rules**: Add explicit constraints — what the model should NOT do, "
+        "scope limitations, and edge cases to address.\n"
+        "5. **Reasoning Integration**: If a reasoning pattern (CoT, CoD) is specified, "
+        "weave it naturally into the task flow rather than as a separate appendix.\n"
+        "6. **Example Enhancement**: If few-shot examples are provided, frame them as a pattern "
+        "the model must follow precisely.\n"
+        "7. **Guardrail Embedding**: If verification/fact-checking is requested, make it a mandatory "
+        "numbered step in the output process, not just a suggestion.\n"
+        "8. **Specificity Injection**: Replace any vague instructions with concrete, measurable criteria.\n\n"
+        "## Output Rules\n"
+        "- Output ONLY the optimized prompt text.\n"
+        "- No meta-commentary, no introductions, no conclusions.\n"
+        "- Preserve every constraint, role, task, reasoning pattern, and guardrail from the original.\n"
+        "- Use clear Markdown formatting (headers, numbered lists, bold) for readability.\n\n"
+        "## Raw Prompt Configuration to Optimize:\n"
         f"{base_prompt}"
     )
     

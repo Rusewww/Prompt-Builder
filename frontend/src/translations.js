@@ -57,7 +57,10 @@ export const translations = {
     tipGuardrails: "Enable verification and self-correction mechanisms to reduce hallucinations and improve reliability.",
     tipCoveVerification: "Adds a verification step where the AI cross-checks its own claims for accuracy.",
     tipCove: "Generates a fact-check list the AI uses to validate each statement in its response.",
-    tipSelfRefine: "Allows the AI to critique and improve its own answer through iterative refinement."
+    tipSelfRefine: "Allows the AI to critique and improve its own answer through iterative refinement.",
+    viewPromptOnly: "Prompt Only",
+    viewSplit: "Split View",
+    viewResponseOnly: "Response Only"
   },
   uk: {
     appTitle: "Конструктор Промптів",
@@ -117,6 +120,9 @@ export const translations = {
     tipGuardrails: "Увімкніть механізми верифікації та самокорекції для зменшення галюцинацій.",
     tipCoveVerification: "Додає крок верифікації, де ШІ перевіряє власні твердження на точність.",
     tipCove: "Генерує список перевірки фактів, який ШІ використовує для валідації кожного твердження.",
-    tipSelfRefine: "Дозволяє ШІ критикувати та покращувати власну відповідь через ітеративне вдосконалення."
+    tipSelfRefine: "Дозволяє ШІ критикувати та покращувати власну відповідь через ітеративне вдосконалення.",
+    viewPromptOnly: "Тільки промпт",
+    viewSplit: "Розділений вигляд",
+    viewResponseOnly: "Тільки відповідь"
   }
 };

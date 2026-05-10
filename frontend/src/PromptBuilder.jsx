@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useLanguage } from './LanguageContext';
 
 const StepIndicator = ({ currentStep }) => (
@@ -41,7 +41,21 @@ const PromptBuilder = () => {
   const [executionId, setExecutionId] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [llmResponse, setLlmResponse] = useState('');
+  const [viewMode, setViewMode] = useState('prompt'); // 'prompt' | 'split' | 'response'
   const [status, setStatus] = useState('idle'); // idle, compiling, compiled, executing, review, approved
+
+  const promptTextareaRef = useRef(null);
+
+  const autoResizeTextarea = useCallback(() => {
+    const el = promptTextareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  }, []);
+
+  useEffect(() => {
+    autoResizeTextarea();
+  }, [compiledResult, autoResizeTextarea]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -125,6 +139,7 @@ const PromptBuilder = () => {
       setLlmResponse(data.llm_response);
       setExecutionId(data.execution_id);
       setErrorMessage('');
+      setViewMode('response');
       setStatus('review');
     } catch (error) {
       console.error('Execution failed:', error);
@@ -310,92 +325,137 @@ const PromptBuilder = () => {
       )}
 
       {currentStep === 2 && (
-        <div className={`stage-2-wrapper ${llmResponse ? 'has-response' : ''}`}>
-          <div className="stage-panel stage-2-main">
-            <div className="stage-header">
-              <button className="btn-secondary btn-small back-btn" onClick={() => setCurrentStep(1)}>
-                {t('backBtn')}
+        <>
+          {llmResponse && (
+            <div className="panel-toggle-bar">
+              <button
+                className={`panel-toggle-btn ${viewMode === 'prompt' ? 'active' : ''}`}
+                onClick={() => setViewMode('prompt')}
+                title={t('viewPromptOnly')}
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="1" y="2" width="14" height="12" rx="2" />
+                </svg>
+                {t('compiledPromptHeader')}
               </button>
-              <h2>{t('stage2Title')}</h2>
+              <button
+                className={`panel-toggle-btn ${viewMode === 'split' ? 'active' : ''}`}
+                onClick={() => setViewMode('split')}
+                title={t('viewSplit')}
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="1" y="2" width="14" height="12" rx="2" />
+                  <line x1="8" y1="2" x2="8" y2="14" />
+                </svg>
+                {t('viewSplit')}
+              </button>
+              <button
+                className={`panel-toggle-btn ${viewMode === 'response' ? 'active' : ''}`}
+                onClick={() => setViewMode('response')}
+                title={t('viewResponseOnly')}
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="1" y="2" width="14" height="12" rx="2" />
+                </svg>
+                {t('llmResponseHeader')}
+              </button>
             </div>
-            
-            {errorMessage && <div className="alert-error" style={{ marginBottom: '1rem' }}>{errorMessage}</div>}
-
-            {compiledResult ? (
-              <div className="preview-section">
-                <h3>{t('compiledPromptHeader')}</h3>
-                <pre className="code-block">{compiledResult}</pre>
-                
-                {(status === 'compiled' || status === 'executing') && (
-                  <div className="hitl-actions mt-4">
-                    <button 
-                      className="btn-ghost" 
-                      onClick={() => navigator.clipboard.writeText(compiledResult)}
-                    >
-                      {t('copyPromptBtn')}
-                    </button>
-                    <button 
-                      className="btn-primary" 
-                      onClick={handleExecute} 
-                      disabled={status === 'executing'}
-                    >
-                      {status === 'executing' && <span className="spinner" />}
-                      {status === 'executing' ? t('executingBtn') : t('sendLlmBtn')}
-                    </button>
-                    <button 
-                      className="btn-success" 
-                      onClick={async () => {
-                        try {
-                          const res = await fetch('/api/prompts/save_direct', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ template_id: templateId, compiled_prompt: compiledResult })
-                          });
-                          if(res.ok) setStatus('approved');
-                        } catch (err) { console.error(err); }
-                      }}
-                      disabled={status === 'executing'}
-                    >
-                      {t('saveWithoutTestingBtn')}
-                    </button>
-                  </div>
-                )}
-
+          )}
+          <div className={`stage-2-wrapper ${llmResponse ? `has-response view-${viewMode}` : ''}`}>
+            <div className={`stage-panel stage-2-main ${llmResponse && viewMode === 'response' ? 'collapsed' : ''}`}>
+              <div className="stage-header">
+                <button className="btn-secondary btn-small back-btn" onClick={() => setCurrentStep(1)}>
+                  {t('backBtn')}
+                </button>
+                <h2>{t('stage2Title')}</h2>
               </div>
-            ) : (
-              <div className="empty-state">
-                <p>{t('emptyPreview')}</p>
+              
+              {errorMessage && <div className="alert-error" style={{ marginBottom: '1rem' }}>{errorMessage}</div>}
+
+              {compiledResult ? (
+                <div className="preview-section">
+                  <h3>{t('compiledPromptHeader')}</h3>
+                  <textarea
+                    ref={promptTextareaRef}
+                    className="code-block editable-prompt"
+                    value={compiledResult}
+                    onChange={(e) => {
+                      setCompiledResult(e.target.value);
+                      autoResizeTextarea();
+                    }}
+                  />
+                  
+                  {(status === 'compiled' || status === 'executing') && (
+                    <div className="hitl-actions mt-4">
+                      <button 
+                        className="btn-ghost" 
+                        onClick={() => navigator.clipboard.writeText(compiledResult)}
+                      >
+                        {t('copyPromptBtn')}
+                      </button>
+                      <button 
+                        className="btn-primary" 
+                        onClick={handleExecute} 
+                        disabled={status === 'executing'}
+                      >
+                        {status === 'executing' && <span className="spinner" />}
+                        {status === 'executing' ? t('executingBtn') : t('sendLlmBtn')}
+                      </button>
+                      <button 
+                        className="btn-success" 
+                        onClick={async () => {
+                          try {
+                            const res = await fetch('/api/prompts/save_direct', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ template_id: templateId, compiled_prompt: compiledResult })
+                            });
+                            if(res.ok) setStatus('approved');
+                          } catch (err) { console.error(err); }
+                        }}
+                        disabled={status === 'executing'}
+                      >
+                        {t('saveWithoutTestingBtn')}
+                      </button>
+                    </div>
+                  )}
+
+                </div>
+              ) : (
+                <div className="empty-state">
+                  <p>{t('emptyPreview')}</p>
+                </div>
+              )}
+            </div>
+
+            {llmResponse && (
+              <div className={`stage-panel stage-2-response ${viewMode === 'prompt' ? 'collapsed' : ''}`}>
+                <div className="response-section">
+                  <h3>{t('llmResponseHeader')}</h3>
+                  <pre className="code-block">{llmResponse}</pre>
+                  
+                  {status === 'review' && (
+                    <div className="hitl-actions mt-4">
+                      <button className="btn-success" onClick={handleApprove}>
+                        {t('approveBtn')}
+                      </button>
+                      {formData.use_self_refine && (
+                        <button className="btn-danger" onClick={handleRefine}>
+                          {t('rejectBtn')}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  {status === 'approved' && (
+                    <div className="alert-success mt-4">
+                      {t('successMsg')}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
-
-          {llmResponse && (
-            <div className="stage-panel stage-2-response">
-              <div className="response-section">
-                <h3>{t('llmResponseHeader')}</h3>
-                <pre className="code-block">{llmResponse}</pre>
-                
-                {status === 'review' && (
-                  <div className="hitl-actions mt-4">
-                    <button className="btn-success" onClick={handleApprove}>
-                      {t('approveBtn')}
-                    </button>
-                    {formData.use_self_refine && (
-                      <button className="btn-danger" onClick={handleRefine}>
-                        {t('rejectBtn')}
-                      </button>
-                    )}
-                  </div>
-                )}
-                {status === 'approved' && (
-                  <div className="alert-success mt-4">
-                    {t('successMsg')}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
+        </>
       )}
     </div>
   );
