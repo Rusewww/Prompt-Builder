@@ -78,7 +78,7 @@ const PromptLibrary = () => {
   return (
     <div className="library-container stage-panel">
       <h2>{t('libraryTitle')}</h2>
-      
+
       {prompts.length === 0 ? (
         <div className="empty-state">
           <div className="empty-state-icon">📚</div>
@@ -94,7 +94,7 @@ const PromptLibrary = () => {
             <div key={prompt.id} className={`library-card ${prompt.is_favorite ? 'favorite-glow' : ''}`} style={{ animationDelay: `${prompts.indexOf(prompt) * 0.06}s` }}>
               <div className="card-header">
                 <div className="title-section" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexGrow: 1 }}>
-                  <button 
+                  <button
                     className="icon-btn favorite-btn"
                     onClick={() => handleFavorite(prompt.id)}
                     title={prompt.is_favorite ? t('unfavoriteBtn') : t('favoriteBtn')}
@@ -103,9 +103,9 @@ const PromptLibrary = () => {
                   </button>
                   {editingId === prompt.id ? (
                     <div className="edit-title-container">
-                      <input 
-                        type="text" 
-                        value={editTitleValue} 
+                      <input
+                        type="text"
+                        value={editTitleValue}
                         onChange={(e) => setEditTitleValue(e.target.value)}
                         className="edit-title-input"
                         autoFocus
@@ -119,7 +119,7 @@ const PromptLibrary = () => {
                 </div>
                 <div className="card-actions">
                   {editingId !== prompt.id && (
-                    <button 
+                    <button
                       className="icon-btn"
                       onClick={() => {
                         setEditingId(prompt.id);
@@ -130,13 +130,13 @@ const PromptLibrary = () => {
                       ✏️
                     </button>
                   )}
-                  <button 
+                  <button
                     className="btn-secondary btn-small copy-btn"
                     onClick={() => handleCopy(prompt.id, prompt.compiled_prompt)}
                   >
                     {copiedId === prompt.id ? t('copiedBtn') : t('copyBtn')}
                   </button>
-                  <button 
+                  <button
                     className="icon-btn delete-btn"
                     onClick={() => handleDelete(prompt.id)}
                     title={t('deleteBtn')}
@@ -156,3 +156,4 @@ const PromptLibrary = () => {
 };
 
 export default PromptLibrary;
+
